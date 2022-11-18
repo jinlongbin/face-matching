@@ -75,6 +75,39 @@ def save_face_par(base64_string:bytes, child_ids:str, data_folder:str, class_nam
     return data_dict['known_base64_string'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
 
 
+def save_face_tea(base64_string:bytes, face_locations_tag:list, child_ids_tag:list, data_folder:str, class_name:str):
+    '''
+    선생님이 직접 태깅한 정보를 데이터 베이스에 저장
+    한 장의 이미지에서 여러개 얼굴 태깅 가능
+    len(face_locations_tag) == len(child_ids_tag)
+    '''
+    if len(face_locations_tag) != len(child_ids_tag):
+        raise Exception('len(face_locations_tag) != len(child_ids_tag)')
+
+    face_locations, face_encodings = face_detection(base64_string, upsample=2)
+
+    # 얼굴 정보를 저장 할 파일
+    data_path = os.path.join(data_folder, class_name) + '.pkl'
+    if os.path.isfile(data_path):
+        with open(data_path,'rb') as f:
+            data_dict = pickle.load(f)
+    else:
+        data_dict = {'known_base64_string':[], 'known_child_ids':[],
+                     'known_face_locations':[], 'known_face_encodings':[]}
+    
+    for i, child_id in enumerate(child_ids_tag):
+        if (child_id) and (face_locations_tag[i] not in data_dict['known_face_locations']) and (face_locations_tag[i] in face_locations):
+            data_dict['known_base64_string'].append(base64_string)
+            data_dict['known_child_ids'].append(child_id)
+            data_dict['known_face_locations'].append(face_locations_tag[i])
+            data_dict['known_face_encodings'].append(face_encodings[face_locations.index(face_locations_tag[i])])
+    
+    with open(data_path,'wb') as f:
+        pickle.dump(data_dict, f)
+
+    return data_dict['known_img_paths'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
+
+
 def remove_face(base64_string:bytes, face_locations:list, child_ids:list, data_folder:str, class_name:str):
     '''저장된 데이터에서 얼굴 정보 삭제'''
 
@@ -141,9 +174,9 @@ def visualize(base64_string:bytes, output_dir:str, img_name:str, face_locations:
 
 
 if __name__ == '__main__':
-    single_img_dir = './img/single'
-    group_img_dir = './img/group'
-    group_output_dir = './img/output_group'
+    single_img_dir = '/data/longbin/face_ID/img/221118/single'
+    group_img_dir = '/data/longbin/face_ID/img/221118/group'
+    group_output_dir = '/data/longbin/face_ID/img/221118/output_group'
     
     os.makedirs(group_output_dir, exist_ok=True)
 
