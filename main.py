@@ -174,9 +174,9 @@ def visualize(base64_string:bytes, output_dir:str, img_name:str, face_locations:
 
 
 if __name__ == '__main__':
-    single_img_dir = '/data/longbin/face_ID/img/221118/single'
-    group_img_dir = '/data/longbin/face_ID/img/221118/group'
-    group_output_dir = '/data/longbin/face_ID/img/221118/output_group'
+    single_img_dir = './img/single'
+    group_img_dir = './img/group'
+    group_output_dir = './img/output_group'
     
     os.makedirs(group_output_dir, exist_ok=True)
 
