@@ -35,7 +35,7 @@ def face_detection(base64_string:bytes, upsample:int):
     return face_location, face_encoding
 
 
-def save_face_par(base64_string:bytes, child_ids:str, data_folder:str, class_name:str):
+def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:str, class_name:str):
     '''
     부모가 처음 앱에 가입할 때 본인 아이 사진을 업로드 하면 
     그 사진들에서 얼굴을 검출하고 128차원 벡터로 추출하여 파일로 저장
@@ -49,12 +49,12 @@ def save_face_par(base64_string:bytes, child_ids:str, data_folder:str, class_nam
         with open(data_path,'rb') as f:
             data_dict = pickle.load(f)
     else:
-        data_dict = {'known_base64_string':[], 'known_child_ids':[],
+        data_dict = {'known_img_id':[], 'known_child_ids':[],
                      'known_face_locations':[], 'known_face_encodings':[]}
 
     # 사진에서 얼굴 위치 및 특징 추출
-    if base64_string in data_dict['known_base64_string']:
-        return data_dict['known_base64_string'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
+    if img_id in data_dict['known_img_id']:
+        return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
     
     with open(img_path, 'rb') as img:
         base64_string = base64.b64encode(img.read())
@@ -62,9 +62,9 @@ def save_face_par(base64_string:bytes, child_ids:str, data_folder:str, class_nam
     face_location, face_encoding = face_detection(base64_string, upsample=1)
     
     if len(face_location) != 1:
-        return data_dict['known_base64_string'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
+        return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
 
-    data_dict['known_base64_string'].append(base64_string)
+    data_dict['known_img_id'].append(img_id)
     data_dict['known_child_ids'].append(child_ids)
     data_dict['known_face_locations'].append(face_location[0])
     data_dict['known_face_encodings'].append(face_encoding[0])
@@ -72,10 +72,10 @@ def save_face_par(base64_string:bytes, child_ids:str, data_folder:str, class_nam
     with open(data_path,'wb') as f:
         pickle.dump(data_dict, f)
 
-    return data_dict['known_base64_string'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
+    return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
 
 
-def save_face_tea(base64_string:bytes, face_locations_tag:list, child_ids_tag:list, data_folder:str, class_name:str):
+def save_face_tea(base64_string:bytes, img_id:str, face_locations_tag:list, child_ids_tag:list, data_folder:str, class_name:str):
     '''
     선생님이 직접 태깅한 정보를 데이터 베이스에 저장
     한 장의 이미지에서 여러개 얼굴 태깅 가능
@@ -92,12 +92,12 @@ def save_face_tea(base64_string:bytes, face_locations_tag:list, child_ids_tag:li
         with open(data_path,'rb') as f:
             data_dict = pickle.load(f)
     else:
-        data_dict = {'known_base64_string':[], 'known_child_ids':[],
+        data_dict = {'known_img_id':[], 'known_child_ids':[],
                      'known_face_locations':[], 'known_face_encodings':[]}
     
     for i, child_id in enumerate(child_ids_tag):
         if (child_id) and (face_locations_tag[i] not in data_dict['known_face_locations']) and (face_locations_tag[i] in face_locations):
-            data_dict['known_base64_string'].append(base64_string)
+            data_dict['known_img_id'].append(img_id)
             data_dict['known_child_ids'].append(child_id)
             data_dict['known_face_locations'].append(face_locations_tag[i])
             data_dict['known_face_encodings'].append(face_encodings[face_locations.index(face_locations_tag[i])])
@@ -105,10 +105,10 @@ def save_face_tea(base64_string:bytes, face_locations_tag:list, child_ids_tag:li
     with open(data_path,'wb') as f:
         pickle.dump(data_dict, f)
 
-    return data_dict['known_img_paths'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
+    return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
 
 
-def remove_face(base64_string:bytes, face_locations:list, child_ids:list, data_folder:str, class_name:str):
+def remove_face(img_id:str, face_locations:list, child_ids:list, data_folder:str, class_name:str):
     '''저장된 데이터에서 얼굴 정보 삭제'''
 
     if len(face_locations) != len(child_ids):
@@ -122,9 +122,9 @@ def remove_face(base64_string:bytes, face_locations:list, child_ids:list, data_f
         data_dict = pickle.load(f)
 
     for i, face_location in enumerate(face_locations):
-        if (base64_string in data_dict['known_base64_string']) and (face_location in data_dict['known_face_locations']) and (child_ids[i] in data_dict['known_child_ids']):
+        if (img_id in data_dict['known_img_id']) and (face_location in data_dict['known_face_locations']) and (child_ids[i] in data_dict['known_child_ids']):
             idx = data_dict['known_face_locations'].index(face_location)
-            del data_dict['known_base64_string'][idx]
+            del data_dict['known_img_id'][idx]
             del data_dict['known_child_ids'][idx]
             del data_dict['known_face_locations'][idx]
             del data_dict['known_face_encodings'][idx]
@@ -196,7 +196,7 @@ if __name__ == '__main__':
             with open(img_path, 'rb') as img:
                 base64_string = base64.b64encode(img.read())
 
-            known_base64_string, known_child_ids, known_face_locations, known_face_encodings = save_face_par(base64_string, child_id, './', 'C1')
+            known_base64_string, known_child_ids, known_face_locations, known_face_encodings = save_face_par(base64_string, base64_string[-10:], child_id, './', 'C2')
 
     print('=== face matching ===')
     for img_name in tqdm(group_img_names):
