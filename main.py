@@ -56,9 +56,6 @@ def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:st
     if img_id in data_dict['known_img_id']:
         return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
     
-    with open(img_path, 'rb') as img:
-        base64_string = base64.b64encode(img.read())
-    
     face_location, face_encoding = face_detection(base64_string, upsample=1)
     
     if len(face_location) != 1:
@@ -216,9 +213,9 @@ def visualize(base64_string:bytes, output_dir:str, img_name:str, face_locations:
 
 
 if __name__ == '__main__':
-    single_img_dir = './img/single'
-    group_img_dir = './img/group'
-    group_output_dir = './img/output_group'
+    single_img_dir = '/data/longbin/face_ID/img/221017/single'
+    group_img_dir = '/data/longbin/face_ID/img/221017/group'
+    group_output_dir = '/data/longbin/face_ID/img/221017/output_group'
     
     os.makedirs(group_output_dir, exist_ok=True)
 
