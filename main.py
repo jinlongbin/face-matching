@@ -35,7 +35,7 @@ def face_detection(base64_string:bytes, upsample:int):
     return face_location, face_encoding
 
 
-def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:str, class_name:str):
+def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:str, class_id:str):
     '''
     부모가 처음 앱에 가입할 때 본인 아이 사진을 업로드 하면 
     그 사진들에서 얼굴을 검출하고 128차원 벡터로 추출하여 파일로 저장
@@ -44,7 +44,7 @@ def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:st
     '''
 
     # 얼굴 정보를 저장 할 파일
-    data_path = os.path.join(data_folder, class_name) + '.pkl'
+    data_path = os.path.join(data_folder, class_id) + '.pkl'
     if os.path.isfile(data_path):
         with open(data_path,'rb') as f:
             data_dict = pickle.load(f)
@@ -75,7 +75,7 @@ def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:st
     return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
 
 
-def save_face_tea(base64_string:bytes, img_id:str, face_locations_tag:list, child_ids_tag:list, data_folder:str, class_name:str):
+def save_face_tea(base64_string:bytes, img_id:str, face_locations_tag:list, child_ids_tag:list, data_folder:str, class_id:str):
     '''
     선생님이 직접 태깅한 정보를 데이터 베이스에 저장
     한 장의 이미지에서 여러개 얼굴 태깅 가능
@@ -87,7 +87,7 @@ def save_face_tea(base64_string:bytes, img_id:str, face_locations_tag:list, chil
     face_locations, face_encodings = face_detection(base64_string, upsample=2)
 
     # 얼굴 정보를 저장 할 파일
-    data_path = os.path.join(data_folder, class_name) + '.pkl'
+    data_path = os.path.join(data_folder, class_id) + '.pkl'
     if os.path.isfile(data_path):
         with open(data_path,'rb') as f:
             data_dict = pickle.load(f)
@@ -108,13 +108,55 @@ def save_face_tea(base64_string:bytes, img_id:str, face_locations_tag:list, chil
     return data_dict['known_img_id'], data_dict['known_child_ids'], data_dict['known_face_locations'], data_dict['known_face_encodings']
 
 
-def remove_face(img_id:str, face_locations:list, child_ids:list, data_folder:str, class_name:str):
+def move_child(child_id:str , org_class_id:str , move_class_id:str , data_folder:str):
+    # 기존 반 데이터 경로
+    before_data_path = os.path.join(data_folder, org_class_id) + '.pkl'
+    # 변경된 반 데이터 경로
+    after_data_path = os.path.join(data_folder , move_class_id) + '.pkl' 
+
+    # 기존 반 데이터 파일 존재를 확인
+    if os.path.isfile(before_data_path):
+        with open(before_data_path,'rb') as f:
+            before_data_dict = pickle.load(f)
+    else:
+        raise Exception(f'{before_data_path} is not exist!!')
+    
+    # 변경된 반 데이터 파일 존재를 확인
+    if os.path.isfile(after_data_path):
+        with open(after_data_path , 'rb') as f:
+            after_data_dict = pickle.load(f)
+    else:
+        after_data_dict = {'known_base64_string' : []  , 'known_child_ids' : [] ,
+                           'known_face_locations' : [] , 'known_face_encodings' : []}
+
+    # 기존 반 데이터에 child_id를 가진 데이터가 없어질 때 까지 반복
+    while child_id in before_data_dict['known_child_ids']:
+        idx = before_data_dict['known_child_ids'].index( child_id )
+        after_data_dict['known_base64_string'].append( before_data_dict['known_base64_string'][idx])
+        del before_data_dict['known_base64_string'][idx]
+        after_data_dict['known_child_ids'].append( before_data_dict['known_child_ids'][idx])
+        del before_data_dict['known_child_ids'][idx]
+        after_data_dict['known_face_locations'].append( before_data_dict['known_face_locations'][idx])
+        del before_data_dict['known_face_locations'][idx]
+        after_data_dict['known_face_encodings'].append( before_data_dict['known_face_encodings'][idx])
+        del before_data_dict['known_face_encodings'][idx]
+
+    # 기존 반 데이터 덮어씌우기
+    with open(before_data_path , 'wb') as f:
+        pickle.dump(before_data_dict , f)
+
+    # 변경된 반 데이터 덮어씌우기 또는 생성
+    with open(after_data_path , 'wb') as f:
+        pickle.dump(after_data_dict , f)
+
+        
+def remove_face(img_id:str, face_locations:list, child_ids:list, data_folder:str, class_id:str):
     '''저장된 데이터에서 얼굴 정보 삭제'''
 
     if len(face_locations) != len(child_ids):
         raise Exception('len(face_locations_tag) != len(child_ids_tag)')
 
-    data_path = os.path.join(data_folder, class_name) + '.pkl'
+    data_path = os.path.join(data_folder, class_id) + '.pkl'
     if not os.path.isfile(data_path):
         raise Exception(f'{data_path} not exist!')
 
