@@ -25,12 +25,13 @@ def load_base64(base64_string, mode='RGB'):
     return np.array(image)
 
 
-def face_detection(base64_string:bytes, upsample:int):
+def face_detection(base64_string:bytes, upsample:int, face_location:list=None):
     '''한장의 이미지에서 얼굴 위치와 얼굴 특징 (128차원 벡터) 추출'''
 
     image = load_base64(base64_string, mode='RGB')
 
-    face_location = face_recognition.face_locations(image, number_of_times_to_upsample=upsample, model='cnn')
+    if not face_location:
+        face_location = face_recognition.face_locations(image, number_of_times_to_upsample=upsample, model='cnn')
     face_encoding = face_recognition.face_encodings(image, known_face_locations=face_location, num_jitters=1, model='small')
     return face_location, face_encoding
 
@@ -81,7 +82,7 @@ def save_face_tea(base64_string:bytes, img_id:str, face_locations_tag:list, chil
     if len(face_locations_tag) != len(child_ids_tag):
         raise Exception('len(face_locations_tag) != len(child_ids_tag)')
 
-    face_locations, face_encodings = face_detection(base64_string, upsample=2)
+    face_locations, face_encodings = face_detection(base64_string, upsample=2, face_location=face_locations_tag)
 
     # 얼굴 정보를 저장 할 파일
     data_path = os.path.join(data_folder, class_id) + '.pkl'
