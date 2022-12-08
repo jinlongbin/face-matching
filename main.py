@@ -30,10 +30,21 @@ def face_detection(base64_string:bytes, upsample:int, face_location:list=None):
 
     image = load_base64(base64_string, mode='RGB')
 
+    resize_rate = 1
+    if image.shape[0] > 2000 or image.shape[1] > 2000:
+        if image.shape[0] >= image.shape[1]:
+            resize_rate = image.shape[0] / 2000
+            image = cv2.resize(image, (int(image.shape[1] / resize_rate), 2000))
+        else:
+            resize_rate = image.shape[1] / 2000
+            image = cv2.resize(image, (2000, int(image.shape[0] / resize_rate)))
+        print(resize_rate)
+
     if not face_location:
         face_location = face_recognition.face_locations(image, number_of_times_to_upsample=upsample, model='cnn')
+    
     face_encoding = face_recognition.face_encodings(image, known_face_locations=face_location, num_jitters=1, model='small')
-    return face_location, face_encoding
+    return [(int(coord * resize_rate) for coord in location) for location in face_location], face_encoding
 
 
 def save_face_par(base64_string:bytes, img_id:str, child_ids:str, data_folder:str, class_id:str):
