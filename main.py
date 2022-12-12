@@ -38,7 +38,6 @@ def face_detection(base64_string:bytes, upsample:int, face_location:list=None):
         else:
             resize_rate = image.shape[1] / 2000
             image = cv2.resize(image, (2000, int(image.shape[0] / resize_rate)))
-        print(resize_rate)
 
     if not face_location:
         face_location = face_recognition.face_locations(image, number_of_times_to_upsample=upsample, model='cnn')
